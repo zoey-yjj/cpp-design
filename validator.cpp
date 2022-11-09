@@ -15,11 +15,28 @@
  * Password: "Abc123"
  */
 
-class StringValidator {
+class StringValidator {  // main interface for all handlers
 public:
-    virtual StringValidator *setNext(StringValidator *nextValidator) = 0;
     virtual ~StringValidator() {};
-    virtual std::string validate(std::string) = 0;
+    virtual StringValidator *setNext(StringValidator *nextValidator) = 0;  // input pointer to next validator, return string validitor
+    virtual std::string validate(std::string) = 0;  // return string error or success
+}
+
+class BaseValidator: public StringValidator {  // all validators has in common
+protected:
+    StringValidator *next = nullptr;  // point to the next validator in the chain
+public:
+    virtual ~BaseValidator() { delete next; };  // virtual distructor
+    StringValidator *setNext(StringValidator *nextValidator) override {
+        next = nextValidator;
+        return nextValidator;
+    }
+    virtual std::string validate(std::string testString) override {
+        if (this->next) {  // check if there is a next validator in the chain
+            return this->next->validate(testString);
+        }
+        return "Success";  // this is the last in chain
+    }
 }
 
 int main(int argc, const char * argv[]) {
