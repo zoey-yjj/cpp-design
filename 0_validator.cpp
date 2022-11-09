@@ -5,6 +5,11 @@
 /*
  * Chain of responsibility pattern
  *
+ * 1. Useful when implement a series of nested handlers.
+ * 2. Represent sequential checks as a chain of handlers.
+ * 3. Each handler handles the situation or passes 
+ *    on the responsibility to the next handler.
+ *
  * Handler Interface
  * --------------------
  * + setNext(h: Handler) 
