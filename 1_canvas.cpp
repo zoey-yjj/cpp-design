@@ -24,10 +24,36 @@ public:
     std::vector<std::string> getShapes() { return shapes; };
 };
 
+class Command {
+public:
+    virtual ~Command() {};
+    virtual void execute() = 0;
+};
+
 class Button {
 public:
     virtual ~Button() {};
     virtual void click() = 0;
+};
+
+class AddShapeCommand: public Command {
+    std::string shapeName;
+    Canvas *canvas;
+public:
+    AddShapeCommand(const std::string &shapeName, Canvas *canvas):
+        shapeName(shapeName), canvas(canvas) {};
+    void execute() {
+        canvas->addShape(shapeName);
+    }
+};
+
+class ClearCommand: public Command {
+    Canvas *canvas;
+public:
+    ClearCommand(Canvas *canvas) : canvas(canvas) {};
+    void execute() {
+        canvas->clearAll();
+    }
 };
 
 class AddTriangleButton : public Button {
