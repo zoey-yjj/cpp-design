@@ -10,6 +10,9 @@
  *    as their own classes, which implement a common 
  *    command interface.
  * 
+ * Command Interface
+ * ---------------------
+ * + execute()
  */
 
 class Canvas {
