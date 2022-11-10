@@ -13,6 +13,11 @@
  * + mediate(Mediated m)
  */
 
+class Mediator {
+public:
+    virtual void mediate(const std::string &event) = 0;
+};
+
 class InterfaceElement {
 protected:
     std::string name;
@@ -90,6 +95,47 @@ public:
         }
         CheckBox::setIsChecked(isChecked);
     }
+};
+
+class UserInterface : public Mediator {
+    TextBox *nameTextBox;
+    CheckBox *isMarriedCheckbox;
+    TextBox *spousesNameTextBox;
+    ButtonElement *submitButton;
+public:
+    UserInterface() {
+        nameTextBox = new TextBox("Name textbox", true);
+        isMarriedCheckbox = new CheckBox("is married checkbox", true);
+        spousesNameTextBox = new TextBox("Spouse's name textbox", false);
+        submitButton = new ButtonElement("Submit button", false);
+    }
+    ~UserInterface() {
+        delete nameTextBox;
+        delete isMarriedCheckbox;
+        delete spousesNameTextBox;
+        delete submitButton;
+    }
+    void mediate(const std::string &event) override {
+        std::cout << "Mediating event: " << event << "...\n";
+
+        if (event == "Name text is empty") {
+            submitButton->setVisibility(false);
+        } else if (event == "Name textbox is not empty") {
+            submitButton->setVisibility(true);
+        } else if (event == "Is married checkbox is checked") {
+            spousesNameTextBox->setVisibility(true);
+        } else if (event == "Is married checkbox is unchecked") {
+            spousesNameTextBox->setVisibility(false);
+        } else if (event == "Submit button clicked") {
+            std::cout << "Submitted!\n";
+        } else {
+            std::cout << "Unrecognized event!";
+        }
+    }
+    TextBox *getNameTextBox() { return nameTextBox; };
+    CheckBox *getIsMarriedCheckbox() { return isMarriedCheckbox; };
+    TextBox *getSpousesNameTextBox() { return spousesNameTextBox; };
+    ButtonElement *getSubmitButton() { return submitButton; };
 };
 
 int main(int argc, const char * argv[]) {
