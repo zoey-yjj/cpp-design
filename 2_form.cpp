@@ -20,10 +20,12 @@ public:
 
 class InterfaceElement {
 protected:
+    Mediator *mediator;
     std::string name;
     bool isVisible = true;
 public:
-    InterfaceElement(const std::string & name, bool isVisible) : name(name), isVisible(isVisible) {};
+    InterfaceElement(const std::string & name, bool isVisible, Mediator *mediator) : 
+        name(name), isVisible(isVisible), mediator(mediator) {};
     void setVisibility(bool isVisible) { this->isVisible = isVisible; };
     std::string getDescription() {
         return isVisible
@@ -34,67 +36,45 @@ public:
 
 class ButtonElement : public InterfaceElement {
 public:
-    ButtonElement(const std::string & name, bool isVisible) : InterfaceElement(name, isVisible) {};
+    ButtonElement(const std::string & name, bool isVisible, Mediator *mediator) : 
+        InterfaceElement(name, isVisible, mediator) {};
     virtual ~ButtonElement() {};
-    virtual void click() = 0;
+    virtual void click() {
+        mediator->mediate(name + " clicked");
+    };
 };
 
 class TextBox : public InterfaceElement {
     std::string textValue = "";
 public:
-    TextBox(const std::string & name, bool isVisible) : InterfaceElement(name, isVisible) {};
+    TextBox(const std::string & name, bool isVisible, Mediator *mediator) : 
+        InterfaceElement(name, isVisible, mediator) {};
     virtual ~TextBox() {};
-    virtual void changeText(const std::string & newValue) { textValue = newValue; };
+    virtual void changeText(const std::string &newValue) { 
+        textValue = newValue; 
+        if (newValue.empty()) {
+            mediator->mediate(name + " is empty");
+        } else {
+            mediator->mediate(name + " is not empty");
+        }
+    };
 };
 
 class CheckBox : public InterfaceElement {
     bool isChecked = false;
 public:
-    CheckBox(const std::string & name, bool isVisible) : InterfaceElement(name, isVisible) {};
+    CheckBox(const std::string & name, bool isVisible, Mediator *mediator) : 
+        InterfaceElement(name, isVisible, mediator) {};
     virtual ~CheckBox() {};
-    virtual void setIsChecked(bool isChecked) { this->isChecked = isChecked; };
-};
+    virtual void setIsChecked(bool isChecked) { 
+        this->isChecked = isChecked; 
 
-class SubmitButton : public ButtonElement {
-public:
-    SubmitButton() : ButtonElement("Submit button", false) {};
-    void click() override {
-        std::cout << "Submitted!";
-    }
-};
-
-class NameTextBox : public TextBox {
-    SubmitButton *submitButton;
-public:
-    NameTextBox(SubmitButton *submitButton) : TextBox("Name textbox", true), submitButton(submitButton) {};
-    void changeText(const std::string & newValue) override {
-        if (newValue.empty()) {
-            submitButton->setVisibility(false);
-        } else {
-            submitButton->setVisibility(true);
-        }
-        
-        TextBox::changeText(newValue);
-    }
-};
-
-class SpousesNameTextBox : public TextBox {
-public:
-    SpousesNameTextBox() : TextBox("Spouse's name textbox", false) {};
-};
-
-class IsMarriedCheckbox : public CheckBox {
-    SpousesNameTextBox *spousesNameTextBox;
-public:
-    IsMarriedCheckbox(SpousesNameTextBox *spousesNameTextBox) : CheckBox("Is married checkbox", true), spousesNameTextBox(spousesNameTextBox) {};
-    void setIsChecked(bool isChecked) override {
         if (isChecked) {
-            spousesNameTextBox->setVisibility(true);
+            mediator->mediate(name + " is checked");
         } else {
-            spousesNameTextBox->setVisibility(false);
+            mediator->mediate(name + " is unchecked");
         }
-        CheckBox::setIsChecked(isChecked);
-    }
+    };
 };
 
 class UserInterface : public Mediator {
@@ -104,10 +84,10 @@ class UserInterface : public Mediator {
     ButtonElement *submitButton;
 public:
     UserInterface() {
-        nameTextBox = new TextBox("Name textbox", true);
-        isMarriedCheckbox = new CheckBox("is married checkbox", true);
-        spousesNameTextBox = new TextBox("Spouse's name textbox", false);
-        submitButton = new ButtonElement("Submit button", false);
+        nameTextBox = new TextBox("Name textbox", true, this);
+        isMarriedCheckbox = new CheckBox("Is married checkbox", true, this);
+        spousesNameTextBox = new TextBox("Spouse's name textbox", false, this);
+        submitButton = new ButtonElement("Submit button", false, this);
     }
     ~UserInterface() {
         delete nameTextBox;
@@ -139,7 +119,33 @@ public:
 };
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    UserInterface *ui = new UserInterface;
+
+    InterfaceElement *elements[] = {
+        ui->getNameTextBox(),
+        ui->getIsMarriedCheckbox(),
+        ui->getSpousesNameTextBox(),
+        ui->getSubmitButton(),
+    };
+
+    for (auto element: elements) {
+        std::cout << element->getDescription() << "\n";
+    }
+    std::cout << "\n";
+
+    ui->getIsMarriedCheckbox()->setIsChecked(true);
+
+    for (auto element: elements) {
+        std::cout << element->getDescription() << "\n";
+    }
+    std::cout << "\n";
+
+    ui->getNameTextBox()->changeText("John");
+
+    for (auto element: elements) {
+        std::cout << element->getDescription() << "\n";
+    }
+
+    delete ui;
     return 0;
 }
