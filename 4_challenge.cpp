@@ -7,7 +7,32 @@ public:
     virtual void notify(const std::string & publisherName, const std::string & message) = 0;
     virtual std::string getName() = 0;
 };
- 
+
+class Publisher {
+public:
+    virtual void subscribe(Subscriber *subscriber) = 0;
+    virtual void unsubscribe(Subscriber *subscriber) = 0;
+    virtual void publish(const std::string & message) = 0;
+};
+
+class ChatGroup : public Publisher {
+    std::string groupName;
+    std::vector<Subscriber*> subscribers;
+public:
+    ChatGroup(const std::string & name) : groupName(name) {};
+    void subscribe(Subscriber *subscriber) override {
+        this->subscribers.push_back(subscriber);
+    };
+    void unsubscribe(Subscriber *subscriber) override {
+        subscribers.erase(std::remove_if(subscribers.begin(), subscribers.end(), [subscriber](Subscriber *s) { return s->getName() == subscriber->getName(); }), subscribers.end());
+    };
+    void publish(const std::string & message) override {
+        for (auto subscriber : subscribers) {
+            subscriber->notify(groupName, message);
+        }
+    };
+};
+
 class ChatUser : public Subscriber {
     std::string userName;
 public:
@@ -15,33 +40,24 @@ public:
     void notify(const std::string & publisherName, const std::string & message) override {
         std::cout << userName << " received a new message from " << publisherName << ": " << message << "\n";
     }
-    std::string getName() override {
-        return userName;
-    }
+    std::string getName() override { return userName; };
 };
- 
-class Publisher {
+
+class MessageCommand {
 public:
-    virtual void subscribe(Subscriber *subscriber) = 0;
-    virtual void unsubscribe(Subscriber *subscriber) = 0;
-    virtual void publish(const std::string & message) = 0;
+    virtual ~MessageCommand() {};
+    virtual void execute() = 0;
+    virtual std::string getMessage() = 0;
 };
- 
-class ChatGroup : public Publisher {
-    std::string groupName;
-    std::vector<Subscriber*> subscribers;
+
+class SendMessageCommand: public MessageCommand {
+    ChatGroup *chatGroup;
+    std::string message;
 public:
-    ChatGroup(const std::string & groupName) : groupName(groupName) {};
-    void subscribe(Subscriber *subscriber) {
-        this->subscribers.push_back(subscriber);
-    }
-    void unsubscribe(Subscriber *subscriber) {
-        subscribers.erase(std::remove_if(subscribers.begin(), subscribers.end(), [subscriber](Subscriber *s){ return s->getName() == subscriber->getName(); }), subscribers.end());
-    }
-    void publish(const std::string & message) {
-        for (auto subscriber : subscribers) {
-            subscriber->notify(groupName, message);
-        }
+    SendMessageCommand(ChatGroup *chatGroup, std::string message) : chatGroup(chatGroup), message(message) {};
+    std::string getMessage() override { return message; };
+    void execute() override {
+        chatGroup->publish(message);
     }
 };
 
@@ -49,7 +65,7 @@ class Handler {
 public:
     virtual Handler *setNext(Handler *nextValidator) = 0;
     virtual ~Handler() {};
-    virtual std::string handle(ChatGroup *group, const std::string & message) = 0;
+    virtual std::string handle(MessageCommand *command) = 0;
 };
 
 class BaseHandler : public Handler {
@@ -61,9 +77,9 @@ public:
         next = nextValidator;
         return nextValidator;
     }
-    virtual std::string handle(ChatGroup *group, const std::string & message) override {
+    virtual std::string handle(MessageCommand *command) override {
         if (this->next) {
-            return this->next->handle(group, message);
+            return this->next->handle(command);
         }
         return "Success!";
     }
@@ -71,14 +87,14 @@ public:
 
 class NotEmptyValidator: public BaseHandler {
 public:
-    std::string handle(ChatGroup *group, const std::string & message) override {
+    std::string handle(MessageCommand *command) override {
         std::cout << "Checking if empty...\n";
         
-        if (message.empty()) {
+        if (command->getMessage().empty()) {
             return "Please enter a value";
         }
         
-        return BaseHandler::handle(group, message);
+        return BaseHandler::handle(command);
     }
 };
 
@@ -86,21 +102,21 @@ class LengthValidator: public BaseHandler {
     int minLength;
 public:
     LengthValidator(int minLength) : minLength(minLength) {};
-    std::string handle(ChatGroup *group, const std::string & message) override {
+    std::string handle(MessageCommand *command) override {
         std::cout << "Checking if length equals " << minLength << "...\n";
         
-        if (message.length() < minLength) {
+        if (command->getMessage().length() < minLength) {
             return "Please enter a value longer than " + std::to_string(minLength);
         }
         
-        return BaseHandler::handle(group, message);
+        return BaseHandler::handle(command);
     }
 };
 
 class PostMessageHandler: public BaseHandler {
 public:
-    std::string handle(ChatGroup *group, const std::string &message) {
-        group->publish(message);
+    std::string handle(MessageCommand *command) {
+        command->execute();
         return "Message Sent!";
     }
 };
@@ -110,8 +126,8 @@ int main(int argc, const char * argv[]) {
     ChatUser *user2 = new ChatUser("Barb");
     ChatUser *user3 = new ChatUser("Hannah");
     
-    ChatGroup *group1 = new ChatGroup("Gardening Group");
-    ChatGroup *group2 = new ChatGroup("Dog-lovers Group");
+    ChatGroup *group1 = new ChatGroup("Gardening group");
+    ChatGroup *group2 = new ChatGroup("Dog-lovers group");
     
     group1->subscribe(user1);
     group1->subscribe(user2);
@@ -126,17 +142,26 @@ int main(int argc, const char * argv[]) {
         ->setNext(new LengthValidator(2))
         ->setNext(new PostMessageHandler);
     
-    std::cout << "Sending empty message:\n" << sendMessageChain->handle(group1, "") << "\n\n";
-    std::cout << "Sending short message:\n" << sendMessageChain->handle(group1, "H") << "\n\n";
-    std::cout << "Sending message to group 1:\n" << sendMessageChain->handle(group1, "Hello everyone in group 1!") << "\n\n";
-    std::cout << "Sending message to group 2:\n" << sendMessageChain->handle(group2, "Hello everyone in group 2!") << "\n\n";
+    SendMessageCommand *emptyMessage = new SendMessageCommand(group1, "");
+    SendMessageCommand *tooShortMessage = new SendMessageCommand(group1, "H");
+    SendMessageCommand *sayHelloToGroup1 = new SendMessageCommand(group1, "Hello everyone in group 1!");
+    SendMessageCommand *sayHelloToGroup2 = new SendMessageCommand(group2, "Hello everyone in group 2!");
+    
+    std::cout << "Sending empty message:\n" << sendMessageChain->handle(emptyMessage) << "\n\n";
+    std::cout << "Sending short message:\n" << sendMessageChain->handle(tooShortMessage) << "\n\n";
+    std::cout << "Sending message to group 1:\n" << sendMessageChain->handle(sayHelloToGroup1) << "\n\n";
+    std::cout << "Sending message to group 2:\n" << sendMessageChain->handle(sayHelloToGroup2) << "\n\n";
     
     delete user1;
     delete user2;
     delete user3;
     delete group1;
     delete group2;
+    delete emptyMessage;
+    delete tooShortMessage;
+    delete sayHelloToGroup1;
+    delete sayHelloToGroup2;
     delete sendMessageChain;
-
+    
     return 0;
 }
