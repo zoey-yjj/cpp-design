@@ -47,7 +47,22 @@ public:
 };
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    NumberExpression *five = new NumberExpression("5");
+    NumberExpression *seven = new NumberExpression("7");
+    OperationExpression *fivePlusSeven = new OperationExpression("plus", five, seven);
+    
+    NumberExpression *thirteen = new NumberExpression("13");
+    OperationExpression *complexOp = new OperationExpression("minus", thirteen, fivePlusSeven);
+    
+    std::cout << "Five plus seven = " << fivePlusSeven->evaluate() << "\n";
+    
+    std::cout << "13 - (5 + 7) = " << complexOp->evaluate() << "\n";
+    
+    delete five;
+    delete seven;
+    delete fivePlusSeven;
+    delete thirteen;
+    delete complexOp;
+    
     return 0;
 }
