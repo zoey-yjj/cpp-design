@@ -13,7 +13,6 @@
  * + execute(C c)
  */
 
-
 class Visitor {
 public:
     virtual void handlePerson(const std::string & name, int age) = 0;
@@ -52,6 +51,7 @@ class Person {
     int age;
 public:
     Person(const std::string & name, int age) : name(name), age(age) {};
+    void accept(Visitor *v) { v->handlePerson(name, age); };
 };
 
 class Landmark {
@@ -59,6 +59,7 @@ class Landmark {
     std::string cityName;
 public:
     Landmark(const std::string & name, const std::string & cityName) : name(name), cityName(cityName) {};
+    void accept(Visitor *v) { v->handleLandmark(name, cityName); };
 };
 
 class Car {
@@ -66,10 +67,27 @@ class Car {
     std::string model;
 public:
     Car(const std::string & make, const std::string & model) : make(make), model(model) {};
+    void accept(Visitor *v) { v->handleCar(make, model); };
 };
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    Person person("John", 40);
+    Landmark landmark("Eiffel Tower", "Paris");
+    Car car("Chevrolet", "Camaro");
+    
+    DatabaseVisitor *dbv = new DatabaseVisitor;
+    TextFileVisitor *tfv = new TextFileVisitor;
+    
+    person.accept(dbv);
+    landmark.accept(dbv);
+    car.accept(dbv);
+    
+    person.accept(tfv);
+    landmark.accept(tfv);
+    car.accept(tfv);
+    
+    delete dbv;
+    delete tfv;
+    
     return 0;
 }
