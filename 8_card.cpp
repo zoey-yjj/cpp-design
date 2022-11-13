@@ -10,12 +10,6 @@
  * Abstract Class
  * ---------------------
  * + methods()
- * 
- * Client
- * ---------------------
- * - currentStrategy
- * ---------------------
- * + setStrategy(...)
  */
 
 class GreetingCardTemplate {
