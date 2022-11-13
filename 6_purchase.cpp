@@ -51,37 +51,42 @@ public:
 
 class Purchase {
     std::string productName;
-    std::string currentState;
+    State *currentState;
 public:
-    Purchase(const std::string & productName)
-        : productName(productName), currentState("PURCHASED") {};
+    Purchase(const std::string & productName, State *initialSate)
+        : productName(productName), currentState(initialSate) {};
+
     std::string getDescription() {
-        std::string description = productName + " - " + currentState + "\n";
-        
-        if (currentState == "PURCHASED") {
-            description += "Will be shipping soon\n";
-        } else if (currentState == "IN_TRANSIT") {
-            description += "Your item is on the way\n";
-        } else if (currentState == "DELIVERED") {
-            description += "Your item has arrived\n";
-        }
-        
-        return description;
+        return currentState->getDescription();
     }
     
     void goToNextState() {
-        if (currentState == "PURCHASED") {
-            currentState = "IN_TRANSIT";
-        } else if (currentState == "IN_TRANSIT") {
-            currentState = "DELIVERED";
-        } else if (currentState == "DELIVERED") {
-            std::cout << "No more states!";
+        if (currentState->getNextState()) {
+            currentState = currentState->getNextState();
+        } else {
+            std::cout << "No more state";
         }
     };
 };
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    DeliveredState *deliveredState = new DeliveredState(nullptr);
+    InTransitState *inTransitState = new InTransitState(deliveredState);
+    PurchasedState *purchasedState = new PurchasedState(inTransitState);
+
+    Purchase *purchase = new Purchase("Shoes", purchasedState);
+    std::cout << purchase->getDescription() << "\n";
+    
+    purchase->goToNextState();
+    std::cout << purchase->getDescription() << "\n";
+    
+    purchase->goToNextState();
+    std::cout << purchase->getDescription() << "\n";
+    
+    delete deliveredState;
+    delete inTransitState;
+    delete purchasedState;
+    delete purchase;
+
     return 0;
 }
