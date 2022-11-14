@@ -3,7 +3,7 @@
 
 class Visitor {
 public:
-    virtual void handlePerson(const std::string & name, int age) = 0;
+    virtual std::string handlePerson(const std::string & name, int age) = 0;
 };
 
 class Person {
@@ -11,7 +11,7 @@ class Person {
     int age;
 public:
     Person(const std::string & name, int age) : name(name), age(age) {};
-    void accept(Visitor *v) { v->handlePerson(name, age); };
+    std::string accept(Visitor *v) { return v->handlePerson(name, age); };
 };
 
 class GreetingCardTemplate : public Visitor {
@@ -29,11 +29,11 @@ protected:
 public:
     GreetingCardTemplate(const std::string & from) : from(from) {};
     ~GreetingCardTemplate() {};
-    void generateCardFor(Person *person) {
-        person->accept(this);
+    std::string generateCardFor(Person *person) {
+        return person->accept(this);
     }
-    void handlePerson(const std::string & name, int age) {
-        std::cout << "\nSending this card to " << name << ":\n\n" << intro(name) << occasion() << closing(from);
+    std::string handlePerson(const std::string & name, int age) {
+        return intro(name) + occasion() + closing(from);
     }
 };
 
@@ -64,13 +64,15 @@ class GreetingCardGenerator {
 public:
     void addPerson(Person *person) { people.push_back(person); };
     void setTemplate(GreetingCardTemplate *newTemp) { temp = newTemp; };
-    void sendGreetingCards() {
+    std::vector<std::string> createGreetingCards() {
+        std::vector<std::string> cards;
         for (auto person : people) {
-            temp->generateCardFor(person);
+            cards.push_back(temp->generateCardFor(person));
         }
+        return cards;
     }
 };
- 
+
 int main(int argc, const char * argv[]) {
     Person *person1 = new Person("John", 40);
     Person *person2 = new Person("Joan", 80);
@@ -82,10 +84,14 @@ int main(int argc, const char * argv[]) {
     generator->addPerson(person3);
     
     generator->setTemplate(new BirthdayCardTemplate("Bob"));
-    generator->sendGreetingCards();
+    for (auto card : generator->createGreetingCards()) {
+        std::cout << card << "\n";
+    }
     
     generator->setTemplate(new NewYearsCardTemplate("Penelope"));
-    generator->sendGreetingCards();
+    for (auto card : generator->createGreetingCards()) {
+        std::cout << card << "\n";
+    }
     
     delete person1;
     delete person2;
