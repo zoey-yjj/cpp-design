@@ -53,31 +53,33 @@ public:
 class SomeTask {
     Logger *logger = nullptr;
 public:
+    SomeTask() {
+        logger = new NullLogger;
+    }
     SomeTask(Logger *logger) : logger(logger) {};
     ~SomeTask() { delete logger; };
     void execute() {
         // Do some stuff...
-        
-        if (logger) {
-            logger->log("Did some stuff");
-        }
+        logger->log("Did some stuff");
         
         // Do some other stuff...
-        
-        if (logger) {
-            logger->log("Did some other stuff");
-        }
+        logger->log("Did some other stuff");
         
         // One last thing...
-        
-        if (logger) {
-            logger->log("Task complete!");
-        }
+        logger->log("Task complete!");
     }
 };
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    SomeTask task1(new ConsoleLogger);
+    SomeTask task2(new FileLogger("logs.txt"));
+    SomeTask task3(new ApiLogger("loggingsite.com/api/logs"));
+    SomeTask task4;
+    
+    task1.execute();
+    task2.execute();
+    task3.execute();
+    task4.execute();
+    
     return 0;
 }
