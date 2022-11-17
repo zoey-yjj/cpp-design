@@ -62,6 +62,18 @@ public:
     }
 };
 
+class NullHistory : public History {
+    CanvasMemento *state;
+public:
+    NullHistory() { state = new CanvasMemento({}); };
+    void addState(CanvasMemento *newState) {
+        state = newState;
+    }
+    CanvasMemento *undo() {
+        return state;
+    }
+};
+
 class Canvas {
     std::vector<std::string> shapes;
     History *history;
@@ -101,7 +113,7 @@ public:
 };
 
 int main(int argc, const char * argv[]) {
-    CanvasHistory *history = new CanvasHistory;
+    NullHistory *history = new NullHistory;
     Canvas *canvas = new Canvas(history);
     
     canvas->addShape("rhombus");
@@ -109,8 +121,26 @@ int main(int argc, const char * argv[]) {
     canvas->addShape("square");
     canvas->addShape("circle");
     
-    std::cout << "Watching replay:\n";
+    std::cout << "Null canvas current shapes:\n";
     
-    ReplayCanvas *replayCanvas = new ReplayCanvas(history);
-    replayCanvas->replay();
+    for (auto shape : canvas->getShapes()) {
+        std::cout << shape << ", ";
+    };
+    
+    std::cout << "\n";
+    
+    std::cout << "Trying to undo...\n";
+    canvas->undo();
+    canvas->undo();
+    canvas->undo();
+    
+    std::cout << "Null canvas shapes after undo:\n";
+    
+    for (auto shape : canvas->getShapes()) {
+        std::cout << shape << ", ";
+    };
+    
+    std::cout << "\n";
+
+    return 0;
 }
